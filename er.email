@@ -1,0 +1,171 @@
+[1mdiff --git a/app/build.gradle.kts b/app/build.gradle.kts[m
+[1mindex a237776..60b0613 100644[m
+[1m--- a/app/build.gradle.kts[m
+[1m+++ b/app/build.gradle.kts[m
+[36m@@ -16,6 +16,18 @@[m [mandroid {[m
+         versionName = "1.0"[m
+ [m
+         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"[m
+[32m+[m
+[32m+[m[32m        // Read the API key from local.properties so it never appears in source control[m
+[32m+[m[32m        val localProperties = java.util.Properties()[m
+[32m+[m[32m        val localPropertiesFile = rootProject.file("local.properties")[m
+[32m+[m[32m        if (localPropertiesFile.exists()) {[m
+[32m+[m[32m            localProperties.load(localPropertiesFile.inputStream())[m
+[32m+[m[32m        }[m
+[32m+[m[32m        buildConfigField([m
+[32m+[m[32m            "String",[m
+[32m+[m[32m            "TMDB_API_KEY",[m
+[32m+[m[32m            "\"${localProperties.getProperty("TMDB_API_KEY", "")}\""[m
+[32m+[m[32m        )[m
+     }[m
+ [m
+     buildTypes {[m
+[36m@@ -39,6 +51,7 @@[m [mandroid {[m
+ [m
+     buildFeatures {[m
+         compose = true[m
+[32m+[m[32m        buildConfig = true  // required to access BuildConfig.TMDB_API_KEY in code[m
+     }[m
+ [m
+     composeOptions {[m
+[1mdiff --git a/app/src/main/java/com/example/movie_app/api/retrofit.kt b/app/src/main/java/com/example/movie_app/api/retrofit.kt[m
+[1mindex d1346a3..8bcb63a 100644[m
+[1m--- a/app/src/main/java/com/example/movie_app/api/retrofit.kt[m
+[1m+++ b/app/src/main/java/com/example/movie_app/api/retrofit.kt[m
+[36m@@ -4,49 +4,22 @@[m [mimport okhttp3.OkHttpClient[m
+ import okhttp3.logging.HttpLoggingInterceptor[m
+ import retrofit2.Retrofit[m
+ import retrofit2.converter.gson.GsonConverterFactory[m
+[31m-import java.security.SecureRandom[m
+[31m-import java.security.cert.X509Certificate[m
+[31m-import javax.net.ssl.SSLContext[m
+[31m-import javax.net.ssl.TrustManager[m
+[31m-import javax.net.ssl.X509TrustManager[m
+ [m
+ object RetrofitInstance {[m
+ [m
+[31m-    private fun getUnsafeOkHttpClient(): OkHttpClient.Builder {[m
+[31m-        try {[m
+[31m-            // Create a trust manager that does not validate certificate chains[m
+[31m-            val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {[m
+[31m-                override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {}[m
+[31m-                override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {}[m
+[31m-                override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()[m
+[31m-            })[m
+[31m-[m
+[31m-[m
+[31m-            val sslContext = SSLContext.getInstance("SSL")[m
+[31m-            sslContext.init(null, trustAllCerts, SecureRandom())[m
+[31m-            [m
+[31m-            val sslSocketFactory = sslContext.socketFactory[m
+[31m-[m
+[31m-            val builder = OkHttpClient.Builder()[m
+[31m-            builder.sslSocketFactory(sslSocketFactory, trustAllCerts[0] as X509TrustManager)[m
+[31m-            builder.hostnameVerifier { _, _ -> true }[m
+[31m-[m
+[31m-            val logging = HttpLoggingInterceptor().apply {[m
+[31m-                level = HttpLoggingInterceptor.Level.BODY[m
+[31m-            }[m
+[31m-            builder.addInterceptor(logging)[m
+[31m-[m
+[31m-            return builder[m
+[31m-        } catch (e: Exception) {[m
+[31m-            throw RuntimeException(e)[m
+[31m-        }[m
+[31m-    }[m
+[31m-[m
+     val api: MovieApi by lazy {[m
+[32m+[m[32m        val client = OkHttpClient.Builder()[m
+[32m+[m[32m            .addInterceptor([m
+[32m+[m[32m                HttpLoggingInterceptor().apply {[m
+[32m+[m[32m                    level = HttpLoggingInterceptor.Level.BODY[m
+[32m+[m[32m                }[m
+[32m+[m[32m            )[m
+[32m+[m[32m            .build()[m
+[32m+[m
+         Retrofit.Builder()[m
+             .baseUrl("https://api.themoviedb.org/3/")[m
+             .addConverterFactory(GsonConverterFactory.create())[m
+[31m-            .client(getUnsafeOkHttpClient().build())[m
+[32m+[m[32m            .client(client)[m
+             .build()[m
+             .create(MovieApi::class.java)[m
+     }[m
+[1mdiff --git a/app/src/main/java/com/example/movie_app/navigation/navigation.kt b/app/src/main/java/com/example/movie_app/navigation/navigation.kt[m
+[1mindex 647a491..3ff2368 100644[m
+[1m--- a/app/src/main/java/com/example/movie_app/navigation/navigation.kt[m
+[1m+++ b/app/src/main/java/com/example/movie_app/navigation/navigation.kt[m
+[36m@@ -6,31 +6,40 @@[m [mimport androidx.lifecycle.viewmodel.compose.viewModel[m
+ import androidx.navigation.compose.NavHost[m
+ import androidx.navigation.compose.composable[m
+ import androidx.navigation.compose.rememberNavController[m
+[31m-import com.example.movie_app.api.MovieViewModel[m
+[31m-import com.example.movie_app.screen.HomeScreen[m
+[32m+[m[32mimport com.example.movie_app.domain.MovieViewModel[m
+ import com.example.movie_app.screen.DetailScreen[m
+[32m+[m[32mimport com.example.movie_app.screen.HomeScreen[m
+ [m
+ @Composable[m
+[31m-fun AppNavigation(modifier: Modifier = Modifier)[m
+[31m-{[m
+[32m+[m[32mfun AppNavigation(modifier: Modifier = Modifier) {[m
+     val navController = rememberNavController()[m
+[32m+[m
+[32m+[m[32m    // Single ViewModel instance scoped to the entire nav graph.[m
+[32m+[m[32m    // Both HomeScreen and DetailScreen share this same instance.[m
+     val viewModel: MovieViewModel = viewModel()[m
+ [m
+     NavHost([m
+         navController = navController,[m
+[31m-        startDestination = "HomeScreen",[m
+[32m+[m[32m        startDestination = Screen.Home.route,[m
+         modifier = modifier,[m
+[31m-    )[m
+[31m-    {[m
+[31m-        composable("HomeScreen") {[m
+[31m-[m
+[31m-            HomeScreen(navController, modifier = Modifier, viewModel = viewModel)[m
+[32m+[m[32m    ) {[m
+[32m+[m[32m        composable(Screen.Home.route) {[m
+[32m+[m[32m            HomeScreen([m
+[32m+[m[32m                navController = navController,[m
+[32m+[m[32m                modifier = Modifier,[m
+[32m+[m[32m                viewModel = viewModel[m
+[32m+[m[32m            )[m
+         }[m
+[31m-        composable("DetailScreen/{movieId}") { backStackEntry ->[m
+[32m+[m
+[32m+[m[32m        composable(Screen.Detail.route) { backStackEntry ->[m
+             val movieId = backStackEntry.arguments[m
+                 ?.getString("movieId")[m
+[31m-                ?.toInt() ?: 0[m
+[31m-            DetailScreen(movieId, modifier = Modifier, viewModel = viewModel)[m
+[32m+[m[32m                ?.toIntOrNull() ?: 0[m
+[32m+[m[32m            DetailScreen([m
+[32m+[m[32m                movieId = movieId,[m
+[32m+[m[32m                modifier = Modifier,[m
+[32m+[m[32m                viewModel = viewModel[m
+[32m+[m[32m            )[m
+         }[m
+     }[m
+ }[m
+[1mdiff --git a/app/src/main/java/com/example/movie_app/screen/DetailScreen.kt b/app/src/main/java/com/example/movie_app/screen/DetailScreen.kt[m
+[1mindex f0a14d3..194650b 100644[m
+[1m--- a/app/src/main/java/com/example/movie_app/screen/DetailScreen.kt[m
+[1m+++ b/app/src/main/java/com/example/movie_app/screen/DetailScreen.kt[m
+[36m@@ -6,56 +6,82 @@[m [mimport androidx.compose.foundation.layout.Column[m
+ import androidx.compose.foundation.layout.Spacer[m
+ import androidx.compose.foundation.layout.fillMaxSize[m
+ import androidx.compose.foundation.layout.fillMaxWidth[m
+[32m+[m[32mimport androidx.compose.foundation.layout.height[m
+ import androidx.compose.foundation.layout.padding[m
+[32m+[m[32mimport androidx.compose.material3.HorizontalDivider[m
+ import androidx.compose.material3.Text[m
+ import androidx.compose.runtime.Composable[m
+ import androidx.compose.runtime.collectAsState[m
+ import androidx.compose.runtime.getValue[m
+[31m-import androidx.compose.ui.Alignment[m
+ import androidx.compose.ui.Modifier[m
+ import androidx.compose.ui.graphics.Color[m
+[32m+[m[32mimport 

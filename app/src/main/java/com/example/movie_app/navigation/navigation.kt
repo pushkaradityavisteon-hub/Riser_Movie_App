@@ -6,31 +6,40 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.movie_app.api.MovieViewModel
-import com.example.movie_app.screen.HomeScreen
+import com.example.movie_app.domain.MovieViewModel
 import com.example.movie_app.screen.DetailScreen
+import com.example.movie_app.screen.HomeScreen
 
 @Composable
-fun AppNavigation(modifier: Modifier = Modifier)
-{
+fun AppNavigation(modifier: Modifier = Modifier) {
     val navController = rememberNavController()
+
+    // Single ViewModel instance scoped to the entire nav graph.
+    // Both HomeScreen and DetailScreen share this same instance.
     val viewModel: MovieViewModel = viewModel()
 
     NavHost(
         navController = navController,
-        startDestination = "HomeScreen",
+        startDestination = Screen.Home.route,
         modifier = modifier,
-    )
-    {
-        composable("HomeScreen") {
-
-            HomeScreen(navController, modifier = Modifier, viewModel = viewModel)
+    ) {
+        composable(Screen.Home.route) {
+            HomeScreen(
+                navController = navController,
+                modifier = Modifier,
+                viewModel = viewModel
+            )
         }
-        composable("DetailScreen/{movieId}") { backStackEntry ->
+
+        composable(Screen.Detail.route) { backStackEntry ->
             val movieId = backStackEntry.arguments
                 ?.getString("movieId")
-                ?.toInt() ?: 0
-            DetailScreen(movieId, modifier = Modifier, viewModel = viewModel)
+                ?.toIntOrNull() ?: 0
+            DetailScreen(
+                movieId = movieId,
+                modifier = Modifier,
+                viewModel = viewModel
+            )
         }
     }
 }
