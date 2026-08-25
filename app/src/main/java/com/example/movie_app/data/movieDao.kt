@@ -1,7 +1,9 @@
-package com.example.movie_app.database
+package com.example.movie_app.data
 
-
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 
 @Dao
