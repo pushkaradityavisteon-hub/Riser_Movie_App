@@ -2,24 +2,30 @@ package com.example.movie_app.data
 
 import android.content.Context
 import androidx.room.Room
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
 
-object DatabaseProvider {
+@Module
+@InstallIn(SingletonComponent::class)
+object DatabaseModule {
 
-    private var INSTANCE: AppDatabase? = null
+    @Provides
+    @Singleton
+    fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase {
+        return Room.databaseBuilder(
+            context,
+            AppDatabase::class.java,
+            "movie_db"
+        ).fallbackToDestructiveMigration().build()
+    }
 
-    fun getDatabase(context: Context): AppDatabase {
-        return INSTANCE ?: synchronized(this) {
-            val instance = Room.databaseBuilder(
-                context.applicationContext,
-                AppDatabase::class.java,
-                "movie_db"
-            )
-                // Wipes and rebuilds the DB when the schema version changes.
-                // Safe during development; replace with a proper Migration in production.
-                .fallbackToDestructiveMigration()
-                .build()
-            INSTANCE = instance
-            instance
-        }
+    @Provides
+    @Singleton
+    fun provideMovieDao(db: AppDatabase): MovieDao {
+        return db.movieDao()
     }
 }

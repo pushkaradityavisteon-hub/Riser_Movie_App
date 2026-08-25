@@ -6,17 +6,9 @@ import com.example.movie_app.data.MovieEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
-/**
- * DOMAIN LAYER — Repository
- *
- * Single source of truth for movie data. Sits between the data layer
- * (Room DAO) and the API layer (Retrofit), orchestrating how data
- * is fetched, cached, and exposed upward to the ViewModel.
- *
- * Neither the ViewModel nor the UI ever touches Room or Retrofit directly.
- */
-class MovieRepository(
+class MovieRepository @Inject constructor(
     private val dao: MovieDao,
     private val api: MovieApi
 ) {

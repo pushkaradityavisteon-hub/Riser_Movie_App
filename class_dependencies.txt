@@ -1,0 +1,18 @@
+MovieViewModel      ->  MovieRepository
+MovieViewModel      ->  DatabaseProvider
+MovieViewModel      ->  RetrofitInstance
+
+MovieRepository     ->  MovieDao
+MovieRepository     ->  MovieApi
+
+DatabaseProvider    ->  AppDatabase
+
+AppDatabase         ->  MovieDao
+AppDatabase         ->  MovieEntity
+
+MovieDao            ->  MovieEntity
+
+RetrofitInstance    ->  MovieApi
+
+MovieApi            ->  MovieResponse
+MovieResponse       ->  Movie
