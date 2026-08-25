@@ -1,8 +1,7 @@
-package com.example.movie_app.database
+package com.example.movie_app.data
 
 import android.content.Context
 import androidx.room.Room
-import com.example.movie_app.db.AppDatabase
 
 object DatabaseProvider {
 
@@ -14,7 +13,11 @@ object DatabaseProvider {
                 context.applicationContext,
                 AppDatabase::class.java,
                 "movie_db"
-            ).build()
+            )
+                // Wipes and rebuilds the DB when the schema version changes.
+                // Safe during development; replace with a proper Migration in production.
+                .fallbackToDestructiveMigration()
+                .build()
             INSTANCE = instance
             instance
         }
