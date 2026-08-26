@@ -94,6 +94,8 @@ dependencies {
     ksp(libs.room.compiler)
     implementation(libs.room.ktx)
 
+    // Glide for Compose — image loading from URL
+    implementation("com.github.bumptech.glide:compose:1.0.0-beta01")
     // Hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
