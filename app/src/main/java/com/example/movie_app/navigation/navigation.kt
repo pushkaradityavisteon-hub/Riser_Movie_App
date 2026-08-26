@@ -2,7 +2,7 @@ package com.example.movie_app.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -13,10 +13,7 @@ import com.example.movie_app.screen.HomeScreen
 @Composable
 fun AppNavigation(modifier: Modifier = Modifier) {
     val navController = rememberNavController()
-
-    // Single ViewModel instance scoped to the entire nav graph.
-    // Both HomeScreen and DetailScreen share this same instance.
-    val viewModel: MovieViewModel = viewModel()
+    val viewModel: MovieViewModel = hiltViewModel()
 
     NavHost(
         navController = navController,

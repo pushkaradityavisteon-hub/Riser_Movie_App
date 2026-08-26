@@ -1,7 +1,10 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt.android)
 }
 
 android {
@@ -18,7 +21,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // Read the API key from local.properties so it never appears in source control
-        val localProperties = java.util.Properties()
+        val localProperties = Properties()
         val localPropertiesFile = rootProject.file("local.properties")
         if (localPropertiesFile.exists()) {
             localProperties.load(localPropertiesFile.inputStream())
@@ -93,4 +96,8 @@ dependencies {
 
     // Glide for Compose — image loading from URL
     implementation("com.github.bumptech.glide:compose:1.0.0-beta01")
+    // Hilt
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.hilt.navigation.compose)
 }
