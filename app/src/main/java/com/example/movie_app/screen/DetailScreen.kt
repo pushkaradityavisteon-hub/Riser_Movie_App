@@ -33,7 +33,8 @@ fun DetailScreen(movieId: Int, modifier: Modifier, viewModel: MovieViewModel) {
     val movie = movies.find { it.id == movieId }
 
     Column(
-        modifier = Modifier
+
+            modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF5F5F5))
     ) {
