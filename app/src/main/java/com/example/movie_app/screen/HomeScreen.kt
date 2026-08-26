@@ -37,6 +37,8 @@ import com.bumptech.glide.integration.compose.GlideImage
 import com.example.movie_app.domain.MovieViewModel
 import com.example.movie_app.domain.UiState
 import com.example.movie_app.navigation.Screen
+import androidx.compose.ui.platform.LocalContext
+import com.example.movie_app.data.PrefrenceManager
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
@@ -46,9 +48,13 @@ fun HomeScreen(navController: NavController, modifier: Modifier, viewModel: Movi
     val movies by viewModel.movies.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
     val activity = LocalContext.current as? Activity
+    val context = LocalContext.current
+    val preferenceManager = PrefrenceManager(context)
+    val username= preferenceManager.getUserName()?:"Guest"
 
     // Pressing back on the home screen exits the app
     BackHandler {
+        preferenceManager.logout()
         activity?.finish()
     }
 
@@ -63,7 +69,7 @@ fun HomeScreen(navController: NavController, modifier: Modifier, viewModel: Movi
             // ----------------------------------------------------------------
             Column(modifier = Modifier.fillMaxSize()) {
                 Text(
-                    text = "Popular Movies",
+                    text = "Popular Movies for ${username}",
                     textAlign = TextAlign.Center,
                     fontSize = 30.sp,
                     fontWeight = FontWeight.Bold,
