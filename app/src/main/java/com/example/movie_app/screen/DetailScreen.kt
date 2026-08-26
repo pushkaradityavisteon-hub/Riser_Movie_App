@@ -94,7 +94,7 @@ fun DetailScreen(movieId: Int, modifier: Modifier, viewModel: MovieViewModel) {
                 color = Color.LightGray
             )
 
-                HorizontalDivider(
+                Divider(
                     modifier = Modifier.padding(vertical = 12.dp),
                     color = Color.LightGray
                 )
