@@ -11,6 +11,7 @@ sealed class Screen(val route: String) {
 
     /** The home screen — shows the list of popular movies. */
     object Home : Screen("home")
+    object Login : Screen("login")
 
     /** The detail screen — shows a single movie. Route contains {movieId} as a path argument. */
     object Detail : Screen("detail/{movieId}") {
