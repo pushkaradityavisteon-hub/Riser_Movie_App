@@ -1,5 +1,7 @@
 package com.example.movie_app.screen
 
+import android.content.Intent
+import android.net.Uri
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -14,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -31,6 +34,7 @@ fun DetailScreen(movieId: Int, modifier: Modifier, viewModel: MovieViewModel) {
 
     val movies by viewModel.movies.collectAsState()
     val movie = movies.find { it.id == movieId }
+    val context = LocalContext.current
 
     Column(
 
@@ -106,6 +110,18 @@ fun DetailScreen(movieId: Int, modifier: Modifier, viewModel: MovieViewModel) {
                     lineHeight = 24.sp,
                     color = Color.DarkGray
                 )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                androidx.compose.material3.Button(
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/search?q=${movie.title}"))
+                        context.startActivity(intent)
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(text = "Go to the movie")
+                }
             }
 
         } else {
