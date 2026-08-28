@@ -1,6 +1,8 @@
 package com.example.movie_app.screen
 
 import android.app.Activity
+import android.content.Intent
+import android.os.Build
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -34,6 +36,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
+import com.example.movie_app.service.MovieSyncService
 import com.example.movie_app.viewmodel.MovieViewModel
 import com.example.movie_app.viewmodel.UiState
 import com.example.movie_app.navigation.Screen
@@ -169,7 +172,14 @@ fun HomeScreen(navController: NavController, modifier: Modifier, viewModel: Movi
                             fontSize = 14.sp,
                             textAlign = TextAlign.Center
                         )
-                        Button(onClick = { viewModel.refreshMovies() }) {
+                        Button(onClick = {
+                            val intent = Intent(context, MovieSyncService::class.java)
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                context.startForegroundService(intent)
+                            } else {
+                                context.startService(intent)
+                            }
+                        }) {
                             Text(text = "Retry")
                         }
                     }
