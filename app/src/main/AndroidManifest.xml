@@ -31,5 +31,15 @@
             android:name=".service.MovieSyncService"
             android:foregroundServiceType="dataSync"
             android:exported="false" />
+
+        <service
+            android:name=".favourites.FavouritesService"
+            android:process=":favourites"
+            android:exported="false" />
+
+        <service
+            android:name=".download.DownloadService"
+            android:process=":download"
+            android:exported="false" />
     </application>
 </manifest>

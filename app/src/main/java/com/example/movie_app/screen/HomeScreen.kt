@@ -15,12 +15,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -36,25 +42,32 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
+import com.example.movie_app.navigation.Screen
 import com.example.movie_app.service.MovieSyncService
+import com.example.movie_app.viewmodel.FavouritesViewModel
 import com.example.movie_app.viewmodel.MovieViewModel
 import com.example.movie_app.viewmodel.UiState
-import com.example.movie_app.navigation.Screen
 import com.example.movie_app.data.preferences.PrefrenceManager
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
-fun HomeScreen(navController: NavController, modifier: Modifier, viewModel: MovieViewModel) {
+fun HomeScreen(
+    navController: NavController,
+    modifier: Modifier,
+    viewModel: MovieViewModel,
+    favouritesViewModel: FavouritesViewModel
+) {
     Log.d("HomeScreen", "viewModel: ${System.identityHashCode(viewModel)}")
 
     val movies by viewModel.movies.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
+    val favouriteIds by favouritesViewModel.favouriteIds.collectAsState()
+
     val activity = LocalContext.current as? Activity
     val context = LocalContext.current
     val preferenceManager = PrefrenceManager(context)
-    val username= preferenceManager.getUserName()?:"Guest"
+    val username = preferenceManager.getUserName() ?: "Guest"
 
-    // Pressing back on the home screen exits the app
     BackHandler {
         preferenceManager.logout()
         activity?.finish()
@@ -66,26 +79,47 @@ fun HomeScreen(navController: NavController, modifier: Modifier, viewModel: Movi
             .background(Color.DarkGray)
     ) {
         if (movies.isNotEmpty()) {
-            // ----------------------------------------------------------------
-            // Success — movie list is populated, show it
-            // ----------------------------------------------------------------
             Column(modifier = Modifier.fillMaxSize()) {
-                Text(
-                    text = "Popular Movies for ${username}",
-                    textAlign = TextAlign.Center,
-                    fontSize = 30.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 16.dp, bottom = 8.dp)
+                        .padding(top = 16.dp, bottom = 4.dp, start = 16.dp, end = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Popular Movies",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+
+                    TextButton(
+                        onClick = { navController.navigate(Screen.Favourites.route) }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Favorite,
+                            contentDescription = "Favourites",
+                            tint = Color.Red,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text(
+                            text = " ${favouriteIds.size}",
+                            color = Color.White,
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+
+                Text(
+                    text = "Hello, $username",
+                    color = Color.LightGray,
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
                 )
+
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(movies) { movie ->
-                        // ----------------------------------------------------
-                        // Each movie row: thumbnail on the left, title on right
-                        // w185 = small size from TMDB CDN (saves bandwidth)
-                        // ----------------------------------------------------
+                    items(movies, key = { it.id }) { movie ->
                         Row(
                             modifier = Modifier
                                 .padding(horizontal = 12.dp, vertical = 6.dp)
@@ -96,27 +130,38 @@ fun HomeScreen(navController: NavController, modifier: Modifier, viewModel: Movi
                                 },
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // Poster thumbnail
-                            if (!movie.posterPath.isNullOrBlank()) {
-                                GlideImage(
-                                    model = "https://image.tmdb.org/t/p/w185${movie.posterPath}",
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .width(80.dp)
-                                        .height(100.dp),
-                                    contentScale = ContentScale.Crop
-                                )
-                            } else {
-                                // Grey placeholder when no poster available
-                                Box(
-                                    modifier = Modifier
-                                        .width(80.dp)
-                                        .height(100.dp)
-                                        .background(Color.Gray)
-                                )
+                            Box {
+                                if (!movie.posterPath.isNullOrBlank()) {
+                                    GlideImage(
+                                        model = "https://image.tmdb.org/t/p/w185${movie.posterPath}",
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .width(80.dp)
+                                            .height(100.dp),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                } else {
+                                    Box(
+                                        modifier = Modifier
+                                            .width(80.dp)
+                                            .height(100.dp)
+                                            .background(Color.Gray)
+                                    )
+                                }
+
+                                if (movie.id in favouriteIds) {
+                                    Icon(
+                                        imageVector = Icons.Default.Favorite,
+                                        contentDescription = null,
+                                        tint = Color.Red,
+                                        modifier = Modifier
+                                            .size(20.dp)
+                                            .align(Alignment.TopEnd)
+                                            .padding(2.dp)
+                                    )
+                                }
                             }
 
-                            // Movie title
                             Text(
                                 text = movie.title,
                                 fontSize = 16.sp,
@@ -131,9 +176,6 @@ fun HomeScreen(navController: NavController, modifier: Modifier, viewModel: Movi
                 }
             }
         } else {
-            // ----------------------------------------------------------------
-            // Empty list — show loading spinner, error message, or nothing
-            // ----------------------------------------------------------------
             when (val state = uiState) {
                 is UiState.Loading -> {
                     Column(
