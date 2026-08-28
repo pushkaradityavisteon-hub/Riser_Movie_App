@@ -1,9 +1,10 @@
-package com.example.movie_app.domain
+package com.example.movie_app.viewmodel
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.movie_app.BuildConfig
+import com.example.movie_app.data.repository.MovieRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted

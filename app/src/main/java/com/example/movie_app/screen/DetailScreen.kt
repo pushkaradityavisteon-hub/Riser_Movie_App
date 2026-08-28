@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
-import com.example.movie_app.domain.MovieViewModel
+import com.example.movie_app.viewmodel.MovieViewModel
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable

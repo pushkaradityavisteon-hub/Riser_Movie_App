@@ -1,7 +1,9 @@
-package com.example.movie_app.data
+package com.example.movie_app.data.di
 
 import android.content.Context
 import androidx.room.Room
+import com.example.movie_app.data.local.AppDatabase
+import com.example.movie_app.data.local.MovieDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

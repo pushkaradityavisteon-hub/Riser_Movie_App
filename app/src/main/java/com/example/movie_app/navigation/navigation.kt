@@ -8,8 +8,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.movie_app.data.PrefrenceManager
-import com.example.movie_app.domain.MovieViewModel
+import com.example.movie_app.data.preferences.PrefrenceManager
+import com.example.movie_app.viewmodel.MovieViewModel
 import com.example.movie_app.screen.DetailScreen
 import com.example.movie_app.screen.HomeScreen
 
