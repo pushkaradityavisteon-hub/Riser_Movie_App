@@ -1,4 +1,4 @@
-package com.example.movie_app.api
+package com.example.movie_app.data.remote
 
 import retrofit2.http.GET
 import retrofit2.http.Query

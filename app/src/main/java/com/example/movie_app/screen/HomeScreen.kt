@@ -34,11 +34,10 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
-import com.example.movie_app.domain.MovieViewModel
-import com.example.movie_app.domain.UiState
+import com.example.movie_app.viewmodel.MovieViewModel
+import com.example.movie_app.viewmodel.UiState
 import com.example.movie_app.navigation.Screen
-import androidx.compose.ui.platform.LocalContext
-import com.example.movie_app.data.PrefrenceManager
+import com.example.movie_app.data.preferences.PrefrenceManager
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable

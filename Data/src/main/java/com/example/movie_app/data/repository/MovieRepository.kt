@@ -1,8 +1,8 @@
-package com.example.movie_app.domain
+package com.example.movie_app.data.repository
 
-import com.example.movie_app.api.MovieApi
-import com.example.movie_app.data.MovieDao
-import com.example.movie_app.data.MovieEntity
+import com.example.movie_app.data.local.MovieDao
+import com.example.movie_app.data.local.MovieEntity
+import com.example.movie_app.data.remote.MovieApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
