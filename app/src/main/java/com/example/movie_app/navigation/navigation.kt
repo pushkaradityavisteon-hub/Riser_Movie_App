@@ -9,33 +9,48 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.movie_app.data.preferences.PrefrenceManager
-import com.example.movie_app.viewmodel.MovieViewModel
 import com.example.movie_app.screen.DetailScreen
+import com.example.movie_app.screen.FavouritesScreen
 import com.example.movie_app.screen.HomeScreen
+import com.example.movie_app.viewmodel.DownloadViewModel
+import com.example.movie_app.viewmodel.FavouritesViewModel
+import com.example.movie_app.viewmodel.MovieViewModel
 
 @Composable
 fun AppNavigation(modifier: Modifier = Modifier) {
     val navController = rememberNavController()
-    val viewModel: MovieViewModel = hiltViewModel()
-    val context=LocalContext.current
-    val prefrenceManager= PrefrenceManager(context)
-    val islogged = prefrenceManager.getLoginStatus()
+    val context = LocalContext.current
+    val prefrenceManager = PrefrenceManager(context)
+    val isLogged = prefrenceManager.getLoginStatus()
 
+    val movieViewModel: MovieViewModel = hiltViewModel()
+    val favouritesViewModel: FavouritesViewModel = hiltViewModel()
+    val downloadViewModel: DownloadViewModel = hiltViewModel()
 
     NavHost(
         navController = navController,
-        startDestination = if(islogged) Screen.Home.route else Screen.Login.route,
+        startDestination = if (isLogged) Screen.Home.route else Screen.Login.route,
         modifier = modifier,
     ) {
         composable(Screen.Home.route) {
             HomeScreen(
                 navController = navController,
                 modifier = Modifier,
-                viewModel = viewModel
+                viewModel = movieViewModel,
+                favouritesViewModel = favouritesViewModel
             )
         }
+
         composable(Screen.Login.route) {
             LoginScreen(navController = navController)
+        }
+
+        composable(Screen.Favourites.route) {
+            FavouritesScreen(
+                navController = navController,
+                movieViewModel = movieViewModel,
+                favouritesViewModel = favouritesViewModel
+            )
         }
 
         composable(Screen.Detail.route) { backStackEntry ->
@@ -45,7 +60,9 @@ fun AppNavigation(modifier: Modifier = Modifier) {
             DetailScreen(
                 movieId = movieId,
                 modifier = Modifier,
-                viewModel = viewModel
+                viewModel = movieViewModel,
+                favouritesViewModel = favouritesViewModel,
+                downloadViewModel = downloadViewModel
             )
         }
     }
