@@ -3,8 +3,11 @@ package com.example.movie_app.data.repository
 import com.example.movie_app.data.local.MovieDao
 import com.example.movie_app.data.local.MovieEntity
 import com.example.movie_app.data.remote.MovieApi
+import com.example.movie_app.domain.model.Movie
+import com.example.movie_app.domain.repository.IMovieRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -13,17 +16,23 @@ import javax.inject.Singleton
 class MovieRepository @Inject constructor(
     private val dao: MovieDao,
     private val api: MovieApi
-) {
+) : IMovieRepository {
 
-    /** Reactive stream of cached movies. UI always reads from Room, never the network. */
-    fun getMovies(): Flow<List<MovieEntity>> = dao.getMovies()
+    override fun getMovies(): Flow<List<Movie>> {
+        return dao.getMovies().map { entities ->
+            entities.map { entity ->
+                Movie(
+                    id = entity.id,
+                    title = entity.title,
+                    overview = entity.overview,
+                    posterPath = entity.posterPath,
+                    releaseDate = entity.releaseDate
+                )
+            }
+        }
+    }
 
-    /**
-     * Fetches fresh data from the network and syncs it into Room.
-     * Clears stale movies first so the local cache stays consistent.
-     * Throws on failure — the ViewModel catches and sets the error state.
-     */
-    suspend fun refreshMovies(apiKey: String) {
+    override suspend fun refreshMovies(apiKey: String) {
         withContext(Dispatchers.IO) {
             val response = api.getPopularMovies(apiKey)
             if (response.results.isNotEmpty()) {

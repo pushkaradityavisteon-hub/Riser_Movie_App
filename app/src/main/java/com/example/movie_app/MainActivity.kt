@@ -1,5 +1,7 @@
 package com.example.movie_app
 
+import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -21,6 +23,12 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d("LIFECYCLE","ONCREATE")
+        val intent = Intent(this, com.example.movie_app.service.MovieSyncService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent)
+        } else {
+            startService(intent)
+        }
         enableEdgeToEdge()
         setContent {
             Movie_appTheme {

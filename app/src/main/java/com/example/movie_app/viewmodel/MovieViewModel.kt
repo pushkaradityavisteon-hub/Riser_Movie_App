@@ -3,15 +3,15 @@ package com.example.movie_app.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.movie_app.BuildConfig
-import com.example.movie_app.data.repository.MovieRepository
+import com.example.movie_app.domain.repository.IMovieRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 sealed class UiState {
@@ -22,7 +22,7 @@ sealed class UiState {
 
 @HiltViewModel
 class MovieViewModel @Inject constructor(
-    private val repository: MovieRepository
+    private val repository: IMovieRepository
 ) : ViewModel() {
 
     val movies = repository.getMovies()
@@ -37,20 +37,20 @@ class MovieViewModel @Inject constructor(
 
     init {
         Log.d("MovieViewModel", "ViewModel initialized: $this")
-        refreshMovies()
+        repository.getMovies()
+            .onEach { list ->
+                if (list.isNotEmpty()) {
+                    _uiState.value = UiState.Success
+                }
+            }
+            .launchIn(viewModelScope)
     }
 
-    fun refreshMovies() {
-        viewModelScope.launch {
-            _uiState.value = UiState.Loading
-            try {
-                repository.refreshMovies(BuildConfig.TMDB_API_KEY)
-                Log.d("MovieViewModel", "Refresh successful.")
-                _uiState.value = UiState.Success
-            } catch (e: Exception) {
-                Log.e("MovieViewModel", "Refresh failed: ${e.message}", e)
-                _uiState.value = UiState.Error(e.message ?: "Something went wrong. Please retry.")
-            }
-        }
+    fun onMoviesLoaded() {
+        _uiState.value = UiState.Success
+    }
+
+    fun onError(message: String) {
+        _uiState.value = UiState.Error(message)
     }
 }
