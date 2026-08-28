@@ -59,6 +59,7 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true  // required to access BuildConfig.TMDB_API_KEY in code
+        aidl = true
     }
 
     composeOptions {

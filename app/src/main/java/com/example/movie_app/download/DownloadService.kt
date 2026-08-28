@@ -1,9 +1,13 @@
 package com.example.movie_app.download
 
 import android.app.Service
+import android.content.ContentValues
 import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.os.IBinder
 import android.os.RemoteCallbackList
+import android.provider.MediaStore
 import android.util.Log
 import com.example.movie_app.IDownloadCallback
 import com.example.movie_app.IDownloadService
@@ -14,14 +18,12 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.io.File
-import java.io.FileOutputStream
 
 class DownloadService : Service() {
 
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val callbacks = RemoteCallbackList<IDownloadCallback>()
-    private val downloadedPaths = mutableMapOf<Int, String>()
+    private val downloadedUris = mutableMapOf<Int, String>()
     private val activeDownloads = mutableSetOf<Int>()
 
     private val httpClient = OkHttpClient()
@@ -40,6 +42,7 @@ class DownloadService : Service() {
             serviceScope.launch {
                 try {
                     Log.d("DownloadService", "Starting download for $movieId: $posterUrl")
+
                     val fullUrl = "https://image.tmdb.org/t/p/w500$posterUrl"
                     val request = Request.Builder().url(fullUrl).build()
                     val response = httpClient.newCall(request).execute()
@@ -55,9 +58,27 @@ class DownloadService : Service() {
                     }
 
                     val totalBytes = body.contentLength()
-                    val outputFile = File(filesDir, "poster_$movieId.jpg")
+                    val fileName = "poster_${title.replace(" ", "_")}_$movieId.jpg"
 
-                    FileOutputStream(outputFile).use { out ->
+                    val contentValues = ContentValues().apply {
+                        put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
+                        put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                        put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/MovieApp")
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            put(MediaStore.Images.Media.IS_PENDING, 1)
+                        }
+                    }
+
+                    val resolver = contentResolver
+                    val imageUri: Uri = resolver.insert(
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                        contentValues
+                    ) ?: run {
+                        notifyFailed(movieId, "MediaStore insert failed")
+                        return@launch
+                    }
+
+                    resolver.openOutputStream(imageUri)?.use { out ->
                         body.byteStream().use { input ->
                             val buffer = ByteArray(8192)
                             var bytesRead: Int
@@ -74,12 +95,20 @@ class DownloadService : Service() {
                         }
                     }
 
-                    synchronized(downloadedPaths) {
-                        downloadedPaths[movieId] = outputFile.absolutePath
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        contentValues.clear()
+                        contentValues.put(MediaStore.Images.Media.IS_PENDING, 0)
+                        resolver.update(imageUri, contentValues, null, null)
                     }
+
+                    val savedPath = imageUri.toString()
+                    synchronized(downloadedUris) {
+                        downloadedUris[movieId] = savedPath
+                    }
+
                     notifyProgress(movieId, 100)
-                    notifyComplete(movieId, outputFile.absolutePath)
-                    Log.d("DownloadService", "Download complete for $movieId: ${outputFile.absolutePath}")
+                    notifyComplete(movieId, savedPath)
+                    Log.d("DownloadService", "Saved to gallery: $savedPath")
 
                 } catch (e: Exception) {
                     Log.e("DownloadService", "Download failed for $movieId: ${e.message}")
@@ -96,24 +125,19 @@ class DownloadService : Service() {
         }
 
         override fun isDownloaded(movieId: Int): Boolean {
-            return synchronized(downloadedPaths) {
-                downloadedPaths.containsKey(movieId) &&
-                        File(downloadedPaths[movieId]!!).exists()
-            }
+            return synchronized(downloadedUris) { downloadedUris.containsKey(movieId) }
         }
 
         override fun getLocalPath(movieId: Int): String? {
-            return synchronized(downloadedPaths) { downloadedPaths[movieId] }
+            return synchronized(downloadedUris) { downloadedUris[movieId] }
         }
 
         override fun registerCallback(callback: IDownloadCallback) {
             callbacks.register(callback)
-            Log.d("DownloadService", "Callback registered")
         }
 
         override fun unregisterCallback(callback: IDownloadCallback) {
             callbacks.unregister(callback)
-            Log.d("DownloadService", "Callback unregistered")
         }
     }
 
@@ -147,6 +171,5 @@ class DownloadService : Service() {
         super.onDestroy()
         serviceScope.cancel()
         callbacks.kill()
-        Log.d("DownloadService", "Service destroyed")
     }
 }

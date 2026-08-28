@@ -12,35 +12,35 @@ class FavouritesService : Service() {
 
     private val callbacks = RemoteCallbackList<IFavouritesCallback>()
 
-    private val favouriteIds = mutableSetOf<Int>()
-    private val favouriteData = mutableMapOf<Int, Pair<String, String>>()
+    private val favouriteIdsSet = mutableSetOf<Int>()
+    private val favouriteDataMap = mutableMapOf<Int, Pair<String, String>>()
 
     private val binder = object : IFavouritesService.Stub() {
 
         override fun addFavourite(movieId: Int, title: String, posterPath: String) {
-            synchronized(favouriteIds) {
-                favouriteIds.add(movieId)
-                favouriteData[movieId] = Pair(title, posterPath)
+            synchronized(favouriteIdsSet) {
+                favouriteIdsSet.add(movieId)
+                favouriteDataMap[movieId] = Pair(title, posterPath)
             }
             Log.d("FavouritesService", "Added favourite: $movieId - $title")
             notifyAdded(movieId)
         }
 
         override fun removeFavourite(movieId: Int) {
-            synchronized(favouriteIds) {
-                favouriteIds.remove(movieId)
-                favouriteData.remove(movieId)
+            synchronized(favouriteIdsSet) {
+                favouriteIdsSet.remove(movieId)
+                favouriteDataMap.remove(movieId)
             }
             Log.d("FavouritesService", "Removed favourite: $movieId")
             notifyRemoved(movieId)
         }
 
         override fun isFavourite(movieId: Int): Boolean {
-            return synchronized(favouriteIds) { favouriteIds.contains(movieId) }
+            return synchronized(favouriteIdsSet) { favouriteIdsSet.contains(movieId) }
         }
 
         override fun getFavouriteIds(): IntArray {
-            return synchronized(favouriteIds) { favouriteIds.toIntArray() }
+            return synchronized(favouriteIdsSet) { favouriteIdsSet.toIntArray() }
         }
 
         override fun registerCallback(callback: IFavouritesCallback) {
