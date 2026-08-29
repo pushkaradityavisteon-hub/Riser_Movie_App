@@ -1,0 +1,91 @@
+ROOT CAUSE ANALYSIS
+===================
+Defect: Movie gets unfavourited when user leaves the app (e.g. visits browser) and returns.
+
+OBSERVED BEHAVIOUR
+------------------
+1. User opens a movie detail screen.
+2. User taps the favourite button → movie is added to favourites.
+3. User navigates away from the app (e.g. opens Google in browser).
+4. User returns to the app.
+5. The movie appears unfavourited in the UI — even though no remove action was taken.
+
+ROOT CAUSE
+----------
+The defect is caused by incorrect IPC lifecycle management in MainActivity combined
+with a state reset in FavouritesClient on every unbind/rebind cycle.
+
+Step-by-step breakdown:
+
+1. MainActivity.onStop() calls favouritesClient.unbind().
+   This happens every time the activity goes to the background — including when the
+   user simply switches to another app (like a browser). onStop() fires for ANY
+   background transition, not just when the app is fully closed.
+
+2. Inside FavouritesClient.unbind(), the following happens:
+   - service?.unregisterCallback(callback) is called on the remote service.
+   - context.unbindService(connection) disconnects the IPC binding.
+   - service is set to null.
+   - _isConnected.value = false.
+   NOTE: _favouriteIds is NOT cleared here, so the StateFlow still holds the correct
+   set at the moment of unbind. This is fine.
+
+3. When the user returns, MainActivity.onStart() calls favouritesClient.bind() again.
+   A new ServiceConnection is established.
+
+4. Inside onServiceConnected(), this line executes:
+       val ids = service?.getFavouriteIds() ?: intArrayOf()
+       _favouriteIds.value = ids.toSet()
+   This re-syncs the StateFlow from the service. IF the FavouritesService process
+   is still alive and its in-memory favouriteIdsSet still contains the movie, this
+   works correctly.
+
+5. HOWEVER — the FavouritesService lives in a SEPARATE process
+   (android:process=":favourites"). Android may kill this process while the app is
+   in the background to reclaim memory. When this happens:
+   - The service restarts fresh with an empty favouriteIdsSet.
+   - getFavouriteIds() returns an empty array.
+   - _favouriteIds.value is overwritten with an empty set.
+   - The UI shows the movie as unfavourited.
+
+6. Additionally, even when the service process survives, the repeated unbind/rebind
+   on every onStop/onStart is architecturally fragile — it means every background
+   transition risks a state reset if the service process is recycled.
+
+SECONDARY CONTRIBUTING FACTOR
+------------------------------
+FavouritesService stores favourites ONLY in memory (favouriteIdsSet is a plain
+mutableSetOf<Int>() with no persistence). There is no database, SharedPreferences,
+or file-based storage backing it. So if the service process is killed for any reason,
+all favourites are permanently lost from the service side as well.
+
+The combination of:
+  - Unbinding on every onStop (too aggressive)
+  - No persistent storage in FavouritesService
+  - No re-sync guard on reconnect
+
+...causes the described defect.
+
+AFFECTED FILES
+--------------
+- app/src/main/java/com/example/movie_app/MainActivity.kt
+    → Binds/unbinds on onStart/onStop instead of onCreate/onDestroy
+
+- app/src/main/java/com/example/movie_app/ipc/FavouritesClient.kt
+    → _favouriteIds is reset on every reconnect via getFavouriteIds()
+    → If service was killed and restarted, returns empty set
+
+- app/src/main/java/com/example/movie_app/favourites/FavouritesService.kt
+    → favouriteIdsSet is in-memory only — no persistence layer
+
+PROPOSED FIX DIRECTION
+-----------------------
+1. Move bind()/unbind() calls from onStart/onStop to onCreate/onDestroy in
+   MainActivity. This prevents unnecessary disconnection on every background switch.
+
+2. Add persistence to FavouritesService — use SharedPreferences or a Room database
+   to save and restore favouriteIdsSet across process restarts.
+
+3. (Optional) Add a reconnect guard in FavouritesClient so that on reconnect, if
+   _favouriteIds already has data and the service returns empty, the client does not
+   blindly overwrite — though this is a secondary safety net, not the primary fix.

@@ -36,6 +36,12 @@ class MainActivity : ComponentActivity() {
             startService(syncIntent)
         }
 
+        // Bind IPC clients for the full activity lifetime so the connection
+        // is not dropped when the user briefly switches to another app.
+        favouritesClient.bind()
+        downloadClient.bind()
+        Log.d("LIFECYCLE", "IPC clients bound")
+
         enableEdgeToEdge()
         setContent {
             Movie_appTheme {
@@ -49,17 +55,11 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         Log.d("LIFECYCLE", "ONSTART")
-        favouritesClient.bind()
-        downloadClient.bind()
-        Log.d("LIFECYCLE", "IPC clients bound")
     }
 
     override fun onStop() {
         super.onStop()
         Log.d("LIFECYCLE", "ONSTOP")
-        favouritesClient.unbind()
-        downloadClient.unbind()
-        Log.d("LIFECYCLE", "IPC clients unbound")
     }
 
     override fun onResume() {
@@ -75,5 +75,8 @@ class MainActivity : ComponentActivity() {
     override fun onDestroy() {
         super.onDestroy()
         Log.d("LIFECYCLE", "ONDESTROY")
+        favouritesClient.unbind()
+        downloadClient.unbind()
+        Log.d("LIFECYCLE", "IPC clients unbound")
     }
 }
