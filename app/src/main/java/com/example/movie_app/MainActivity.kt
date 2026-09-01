@@ -7,33 +7,43 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
-import com.example.movie_app.ipc.DownloadClient
-import com.example.movie_app.ipc.FavouritesClient
+import com.example.movie_app.ipc.IDownloadClient
+import com.example.movie_app.ipc.IFavouritesClient
 import com.example.movie_app.navigation.AppNavigation
 import com.example.movie_app.service.MovieSyncService
 import com.example.movie_app.ui.theme.Movie_appTheme
+import com.example.movie_app.viewmodel.MovieViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    @Inject lateinit var favouritesClient: FavouritesClient
-    @Inject lateinit var downloadClient: DownloadClient
+    @Inject lateinit var favouritesClient: IFavouritesClient
+    @Inject lateinit var downloadClient: IDownloadClient
+
+    private val movieViewModel: MovieViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d("LIFECYCLE", "ONCREATE")
 
-        val syncIntent = Intent(this, MovieSyncService::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(syncIntent)
+        // Only sync if Room has no movies -- prevents API call on every rotation
+        if (!movieViewModel.hasMovies()) {
+            Log.d("LIFECYCLE", "Room empty -- starting sync")
+            val syncIntent = Intent(this, MovieSyncService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(syncIntent)
+            } else {
+                startService(syncIntent)
+            }
         } else {
-            startService(syncIntent)
+            Log.d("LIFECYCLE", "Room has data -- skipping sync")
         }
 
         // Bind IPC clients for the full activity lifetime so the connection

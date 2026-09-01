@@ -2,7 +2,7 @@ package com.example.movie_app.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.movie_app.ipc.DownloadClient
+import com.example.movie_app.ipc.IDownloadClient
 import com.example.movie_app.ipc.DownloadState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -12,7 +12,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class DownloadViewModel @Inject constructor(
-    private val client: DownloadClient
+    private val client: IDownloadClient
 ) : ViewModel() {
 
     val downloadStates: StateFlow<Map<Int, DownloadState>> = client.downloadStates

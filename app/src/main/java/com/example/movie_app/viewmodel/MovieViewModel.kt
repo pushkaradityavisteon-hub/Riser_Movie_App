@@ -53,4 +53,6 @@ class MovieViewModel @Inject constructor(
     fun onError(message: String) {
         _uiState.value = UiState.Error(message)
     }
+
+    fun hasMovies(): Boolean = movies.value.isNotEmpty()
 }
