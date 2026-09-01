@@ -19,15 +19,15 @@ import javax.inject.Singleton
 @Singleton
 class FavouritesClient @Inject constructor(
     @ApplicationContext private val context: Context
-) {
+) : IFavouritesClient {
 
     private var service: IFavouritesService? = null
 
     private val _favouriteIds = MutableStateFlow<Set<Int>>(emptySet())
-    val favouriteIds: StateFlow<Set<Int>> = _favouriteIds.asStateFlow()
+    override val favouriteIds: StateFlow<Set<Int>> = _favouriteIds.asStateFlow()
 
     private val _isConnected = MutableStateFlow(false)
-    val isConnected: StateFlow<Boolean> = _isConnected.asStateFlow()
+    override val isConnected: StateFlow<Boolean> = _isConnected.asStateFlow()
 
     private val callback = object : IFavouritesCallback.Stub() {
         override fun onMovieAdded(movieId: Int) {
@@ -41,6 +41,8 @@ class FavouritesClient @Inject constructor(
         }
     }
 
+    private var deathRecipient: IBinder.DeathRecipient? = null
+
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName, binder: IBinder) {
             Log.d("FavouritesClient", "Service connected")
@@ -50,12 +52,13 @@ class FavouritesClient @Inject constructor(
             _favouriteIds.value = ids.toSet()
             _isConnected.value = true
 
-            binder.linkToDeath({
+            deathRecipient = IBinder.DeathRecipient {
                 Log.w("FavouritesClient", "FavouritesService died — reconnecting")
                 _isConnected.value = false
                 service = null
                 bind()
-            }, 0)
+            }
+            binder.linkToDeath(deathRecipient!!, 0)
         }
 
         override fun onServiceDisconnected(name: ComponentName) {
@@ -65,15 +68,17 @@ class FavouritesClient @Inject constructor(
         }
     }
 
-    fun bind() {
+    override fun bind() {
         val intent = Intent(context, FavouritesService::class.java)
         context.bindService(intent, connection, Context.BIND_AUTO_CREATE)
         Log.d("FavouritesClient", "bindService called")
     }
 
-    fun unbind() {
+    override fun unbind() {
         try {
             service?.unregisterCallback(callback)
+            deathRecipient?.let { service?.asBinder()?.unlinkToDeath(it, 0) }
+            deathRecipient = null
             context.unbindService(connection)
         } catch (e: Exception) {
             Log.e("FavouritesClient", "unbind error: ${e.message}")
@@ -82,7 +87,7 @@ class FavouritesClient @Inject constructor(
         _isConnected.value = false
     }
 
-    fun addFavourite(movieId: Int, title: String, posterPath: String) {
+    override fun addFavourite(movieId: Int, title: String, posterPath: String) {
         try {
             service?.addFavourite(movieId, title, posterPath)
         } catch (e: Exception) {
@@ -90,7 +95,7 @@ class FavouritesClient @Inject constructor(
         }
     }
 
-    fun removeFavourite(movieId: Int) {
+    override fun removeFavourite(movieId: Int) {
         try {
             service?.removeFavourite(movieId)
         } catch (e: Exception) {
@@ -98,7 +103,7 @@ class FavouritesClient @Inject constructor(
         }
     }
 
-    fun isFavourite(movieId: Int): Boolean {
+    override fun isFavourite(movieId: Int): Boolean {
         return try {
             service?.isFavourite(movieId) ?: false
         } catch (e: Exception) {
