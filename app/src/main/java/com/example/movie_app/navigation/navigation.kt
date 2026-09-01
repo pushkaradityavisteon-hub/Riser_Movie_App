@@ -62,7 +62,8 @@ fun AppNavigation(modifier: Modifier = Modifier) {
                 modifier = Modifier,
                 viewModel = movieViewModel,
                 favouritesViewModel = favouritesViewModel,
-                downloadViewModel = downloadViewModel
+                downloadViewModel = downloadViewModel,
+                navController = navController
             )
         }
     }

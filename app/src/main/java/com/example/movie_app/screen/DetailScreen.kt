@@ -14,9 +14,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import com.example.movie_app.screen.components.BackButton
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
@@ -37,6 +40,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.example.movie_app.ipc.DownloadState
@@ -51,7 +55,8 @@ fun DetailScreen(
     modifier: Modifier,
     viewModel: MovieViewModel,
     favouritesViewModel: FavouritesViewModel,
-    downloadViewModel: DownloadViewModel
+    downloadViewModel: DownloadViewModel,
+    navController: NavController
 ) {
     Log.d("DetailScreen", "viewModel: ${System.identityHashCode(viewModel)}")
 
@@ -69,24 +74,33 @@ fun DetailScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF5F5F5))
+            .verticalScroll(rememberScrollState())
     ) {
         if (movie != null) {
 
-            if (!movie.posterPath.isNullOrBlank()) {
-                GlideImage(
-                    model = "https://image.tmdb.org/t/p/w500${movie.posterPath}",
-                    contentDescription = "${movie.title} poster",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(300.dp),
-                    contentScale = ContentScale.Crop
-                )
-            } else {
-                Spacer(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(300.dp)
-                        .background(Color.LightGray)
+            Box {
+                if (!movie.posterPath.isNullOrBlank()) {
+                    GlideImage(
+                        model = "https://image.tmdb.org/t/p/w500${movie.posterPath}",
+                        contentDescription = "${movie.title} poster",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(300.dp),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Spacer(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(300.dp)
+                            .background(Color.LightGray)
+                    )
+                }
+
+                // Back button overlaid on top of poster
+                BackButton(
+                    navController = navController,
+                    modifier = Modifier.align(Alignment.TopStart)
                 )
             }
 
@@ -258,6 +272,10 @@ fun DetailScreen(
             }
 
         } else {
+            BackButton(
+                navController = navController,
+                tint = Color.DarkGray
+            )
             Spacer(modifier = Modifier.height(48.dp))
             Text(
                 text = "Movie not found.",
