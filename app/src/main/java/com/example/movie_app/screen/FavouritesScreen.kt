@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import com.example.movie_app.screen.components.BackButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -57,16 +58,21 @@ fun FavouritesScreen(
             .fillMaxSize()
             .background(Color.DarkGray)
     ) {
-        Text(
-            text = "My Favourites",
-            fontSize = 26.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-            textAlign = TextAlign.Center,
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 16.dp, bottom = 8.dp)
-        )
+                .padding(top = 8.dp, start = 4.dp, end = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            BackButton(navController = navController)
+            Text(
+                text = "My Favourites",
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                modifier = Modifier.weight(1f)
+            )
+        }
 
         if (!isConnected) {
             Box(
